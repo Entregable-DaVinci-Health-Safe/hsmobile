@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "Health And Safe",
+    "slug": "healthandsafe",
+    "owner": "healthandsafe",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.healthandsafe.tesis"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "6bd05b1b-c528-4845-a8e1-35c76cba25ea"
+      },
+      "googleAuth": {
+        "expoClientId": "67224328580-e27l88ol5oto5ffhmnoob2jut5ceanjv.apps.googleusercontent.com"
+      }
+    },
+    "scheme": "mobilehealth"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+      {
+          "name": "Debug in Expo",
+          "request": "launch",
+          "type": "pwa-node",
+          "program": "${workspaceFolder}/node_modules/expo/bin/cli.js",
+          "args": ["start"],
+          "cwd": "${workspaceFolder}",
+          "console": "integratedTerminal",
+          "env": { "REACT_NATIVE_TOOLS_LOGS_TIMESTAMP": "true" },
+          "sourceMaps": true,
+          "smartStep": true,
+          "restart": true,
+          "trace": "verbose", // Optional: Verbose logging
+          "server": {
+              "program": "${workspaceFolder}/node_modules/react-native/local-cli/cli.js",
+              "args": ["start"],
+              "envFile": "${workspaceFolder}/.env",
+              "env": {"EXPO_DEBUG": "true"}
+          }
+      }
+  ]
+}
