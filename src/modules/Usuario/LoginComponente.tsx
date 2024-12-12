@@ -25,10 +25,11 @@ import { useLoading } from '../../components/LoadingContext';
 
 // Configuración de Google Sign-In
 GoogleSignin.configure({
-  webClientId: "YOUR_WEB_CLIENT_ID.apps.googleusercontent.com",
+  webClientId: "67224328580-e27l88ol5oto5ffhmnoob2jut5ceanjv.apps.googleusercontent.com", 
   offlineAccess: true,
   forceCodeForRefreshToken: true,
 });
+
 
 // Esquemas de Validación
 const registrationSchema = Yup.object().shape({
@@ -82,6 +83,8 @@ const resetPasswordSchema = Yup.object().shape({
   confirmNewPassword: Yup.string()
     .oneOf([Yup.ref('newPassword'), null], 'Las contraseñas no coinciden')
     .required('Debe confirmar la nueva contraseña'),
+    codigo: Yup.string()
+    .required('El código de verificación es obligatorio'),
 });
 
 const LoginComponente = ({ onLogin }) => {
@@ -124,6 +127,7 @@ const LoginComponente = ({ onLogin }) => {
     verificationCode: useRef(null),
     newPassword: useRef(null),
     confirmNewPassword: useRef(null),
+    codigo: useRef(null)
   };
 
   const generoData = [
@@ -137,6 +141,7 @@ const LoginComponente = ({ onLogin }) => {
 
   // Manejo del Registro
   const handleRegisterPress = async (values, { setSubmitting }) => {
+    setLoading(true);
     try {
       await AxiosHealth.post('register/pacientes', {
         nombre: values.nombre,
@@ -150,16 +155,21 @@ const LoginComponente = ({ onLogin }) => {
       setAlertaVisibleSucess(true);
       setMensajeAlertaSucess("Registro exitoso! Ahora puedes iniciar sesión.");
       setIsRegistering(false);
+      setLoading(false);
+
     } catch (error) {
+      setLoading(false);
       setMensajeAlerta(error.response?.data || "Error al registrar");
       setAlertaVisible(true);
     } finally {
+      setLoading(false);
       setSubmitting(false);
     }
   };
 
   // Manejo del Inicio de Sesión
   const handleLoginPress = async (values, { setSubmitting }) => {
+    setLoading(true)
     try {
       const loginError = await onLogin(values.email, values.password);
       if (loginError) {
@@ -197,7 +207,9 @@ const LoginComponente = ({ onLogin }) => {
         : (await AsyncStorage.removeItem("savedEmail"),
            await AsyncStorage.removeItem("savedPassword"));
 
+           setLoading(false)
     } catch (error) {
+      setLoading(false)
       const errorMessage = error || "Error al iniciar sesión. Intente de nuevo.";
       setMensajeAlerta(errorMessage);
       setAlertaVisible(true);
@@ -210,35 +222,41 @@ const LoginComponente = ({ onLogin }) => {
   // Manejo de Google Sign-In
   const signIn = async () => {
     try {
-      await GoogleSignin.signOut();
-      await GoogleSignin.hasPlayServices();
+      await GoogleSignin.signOut(); // Opcional: cierra sesiones previas
+
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
       await GoogleSignin.addScopes({
         scopes: ["openid", "email", "profile", "https://www.googleapis.com/auth/calendar"],
       });
       const userInfo = await GoogleSignin.signIn();
-      const idToken = userInfo.idToken;
+      const idToken = userInfo.data.idToken
       console.log(JSON.stringify(userInfo, null, 2));
-
-      onLogin(idToken);
+      // Envía el idToken a tu backend para la autenticación
+      await onLogin(idToken);
     } catch (error) {
       console.log(error.code);
+      let errorMessage = "Error desconocido durante el inicio de sesión con Google.";
+
       if (isErrorWithCode(error)) {
         switch (error.code) {
           case statusCodes.SIGN_IN_CANCELLED:
-            console.log("Inicio de sesión cancelado por el usuario");
+            errorMessage = "Has cancelado el inicio de sesión.";
             break;
           case statusCodes.IN_PROGRESS:
-            console.log("El inicio de sesión ya está en progreso");
+            errorMessage = "El inicio de sesión ya está en progreso.";
             break;
           case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
-            console.log("Los servicios de Google Play no están disponibles");
+            errorMessage = "Los servicios de Google Play no están disponibles o no están actualizados.";
             break;
           default:
-            console.log("Error desconocido:", error);
+            errorMessage = "Error desconocido: " + error.message;
         }
       } else {
-        console.log("Error:", error);
+        errorMessage = "Error: " + error.message;
       }
+
+      setMensajeAlerta(errorMessage);
+      setAlertaVisible(true);
     }
   };
 
@@ -261,6 +279,7 @@ const LoginComponente = ({ onLogin }) => {
 
   // Solicitar código de restablecimiento de contraseña
   const handleRequestReset = async (values, { setSubmitting }) => {
+    setLoading(true)
     try {
       await AxiosHealth.put('usuarios/recuperarCuenta', {
         mail: values.email,
@@ -275,6 +294,7 @@ const LoginComponente = ({ onLogin }) => {
       setAlertaVisible(true);
     } finally {
       setSubmitting(false);
+      setLoading(false)
     }
   };
 
@@ -302,17 +322,22 @@ const LoginComponente = ({ onLogin }) => {
   // Restablecer la contraseña
   const handleResetPassword = async (values, { setSubmitting }) => {
     try {
-      await AxiosHealth.post('usuarios/restablecerPassword', {
+      setLoading(true);
+      await AxiosHealth.put('usuarios/resetPassword', {
         mail: emailForReset,
         password: values.newPassword,
+        codigo: values.codigo
       });
       setIsResetPasswordVisible(false);
       setAlertaVisibleSucess(true);
       setMensajeAlertaSucess("Tu contraseña ha sido restablecida exitosamente. Ahora puedes iniciar sesión.");
+      setLoading(false);
     } catch (error) {
+      setLoading(false);
       setMensajeAlerta(error.response?.data || "Error al restablecer la contraseña");
       setAlertaVisible(true);
     } finally {
+      setLoading(false);
       setSubmitting(false);
     }
   };
@@ -710,12 +735,65 @@ const LoginComponente = ({ onLogin }) => {
                 iconColor="#000"
                 onFocus={() => scrollToInput(inputRefs.confirmNewPassword)}
               />
+               <InputComponent
+                placeholder="Ingrese el codigo"
+                value={values.codigo}
+                onChangeText={handleChange('codigo')}
+                onBlur={handleBlur('codigo')}
+                errorMessage={touched.codigo && errors.codigo}
+                iconName="key"
+                iconLibrary="MaterialCommunityIcons"
+                iconColor="#000"
+                onFocus={() => scrollToInput(inputRefs.codigo)}
+              />
               <Dialog.Actions>
                 <View style={styles.buttonSeparateForm}>
                   <ButtonHealth 
                     title="Cancelar" 
                     onPress={() => {
                       setIsResetPasswordVisible(false);
+                      setEmailForReset('');
+                    }} 
+                  />
+                  <ButtonHealth 
+                    title="Restablecer" 
+                    onPress={handleSubmit} 
+                    disabled={isSubmitting} 
+                  />
+                </View>
+              </Dialog.Actions>
+            </>
+          )}
+        </Formik>
+      </Dialog>
+
+      <Dialog isVisible={isForgotPasswordVisible}>
+        <Formik
+          initialValues={{ email: '' }}
+          validationSchema={forgotPasswordSchema}
+          onSubmit={handleRequestReset}
+        >
+          {({ values, errors, handleChange, handleBlur, handleSubmit, isSubmitting, touched }) => (
+            <>
+              <Dialog.Title title="Nueva Contraseña" />
+              <Text style={styles.dialogText}>Ingrese su email.</Text>
+              <InputComponent
+                placeholder="Email"
+                value={values.email}
+                onChangeText={handleChange('email')}
+                onBlur={handleBlur('email')}
+                errorMessage={touched.email && errors.email}
+                iconName="lock-reset"
+                iconLibrary="MaterialCommunityIcons"
+                iconColor="#000"
+                onFocus={() => scrollToInput(inputRefs.email)}
+              />
+              <Dialog.Actions>
+                <View style={styles.buttonSeparateForm}>
+                  <ButtonHealth 
+                    title="Cancelar" 
+                    onPress={() => {
+                      setIsForgotPasswordVisible(false);
                       setEmailForReset('');
                     }} 
                   />

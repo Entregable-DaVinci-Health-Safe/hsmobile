@@ -18,7 +18,6 @@ import { globalStyles } from "../../assets/themed/globalStyle";
 import AlertCustom from "../../components/AlertCustom";
 import { useLoading } from "../../components/LoadingContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { usenavigation } from "@react-navigation/native";
 
 const GrupoDetalles = ({ route, navigation }) => {
   const { setLoading } = useLoading();

@@ -9,6 +9,7 @@ import { globalStyles } from "../../assets/themed/globalStyle";
 import AddressInput from '../../components/inputs/AddressInput';
 import { useInstitucionForm } from "./hooks/useInstitucionForm";
 import ButtonHealth from "../../components/ButtonHealth";
+import { useLoading } from "../../components/LoadingContext";
 
 if (Platform.OS === 'android') {
   UIManager.setLayoutAnimationEnabledExperimental &&
@@ -23,7 +24,7 @@ const AgregarInstitucion = ({ route, navigation }) => {
   const [valueProfesionales, setValueProfesionales] = useState([]); 
   const [idInstitucion, setIdInstitucion] = useState(null); // Aquí declaramos el idInstitucion
   const formikRef = useRef(null);
-
+  const { setLoading } = useLoading();
   const {
     profesionales,
     alertas,
@@ -35,12 +36,14 @@ const AgregarInstitucion = ({ route, navigation }) => {
   } = useInstitucionForm(institucionIndex, modoEdicion);
 
   React.useEffect(() => {
+    setLoading(true);
     const fetchProfesionalesOnOpen = async () => {
       if (isProfesionalesModalVisible) {
         await reloadProfesionales(); // Recarga los profesionales cuando el diálogo se abre
       }
     };
   
+    setLoading(false);
     fetchProfesionalesOnOpen();
   }, [isProfesionalesModalVisible]);
 
@@ -54,12 +57,14 @@ const AgregarInstitucion = ({ route, navigation }) => {
   };
 
   const handleConfirmSubmit = async (values) => {
+    setLoading(true);
     const idNuevaInstitucion = await handleSubmit(values); 
     if (idNuevaInstitucion) {
       setIdInstitucion(idNuevaInstitucion); 
       setValueProfesionales([]); 
       setIsProfesionalesModalVisible(true); 
     }
+    setLoading(false);
   };
 
   const handleProfesionalesSelected = (selectedItems) => {

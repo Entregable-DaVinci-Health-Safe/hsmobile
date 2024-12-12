@@ -43,9 +43,11 @@ const useMedicamentos = () => {
         throw new Error('idHc no encontrado');
       }
       const response = await AxiosHealth.get(`historiasMedicas/${idHc}/medicamentos`);
+      console.log(response.data);
       setMedicamentos(response.data);
     } catch (err) {
       console.error('Error al obtener medicamentos:', err);
+      setMedicamentos([])
       setError(err);
     } finally {
       setLoading(false);
